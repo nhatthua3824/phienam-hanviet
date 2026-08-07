@@ -76,6 +76,17 @@
   }
   .panel textarea::placeholder{ color:#B8AA8F; font-style:italic; font-size:16px;}
 
+  .ta-wrap{ position:relative; flex:1; min-height:0; }
+  .ta-wrap textarea{
+    position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; flex:none;
+  }
+  .ta-highlight{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none; margin:0; padding:0;
+    font-family:'Noto Serif TC','Noto Serif',serif; font-size:22px; line-height:1.9;
+    white-space:pre-wrap; word-wrap:break-word; word-break:break-word; color:transparent;
+  }
+  .ta-highlight mark{ background: rgba(156,51,34,0.28); color:transparent; border-radius:2px; }
+
   .output-render{
     flex:1; font-family: 'Noto Serif TC','Noto Serif', serif; font-size: 21px; line-height: 2.1;
     word-break: break-word; overflow-y:auto;
@@ -183,7 +194,10 @@
   <div class="panels">
     <div class="panel">
       <div class="panel-label" id="leftLabel">Hán cổ</div>
-      <textarea id="inputArea" placeholder="Gõ hoặc dán chữ Hán vào đây… ví dụ: 一二三人手心"></textarea>
+      <div class="ta-wrap">
+        <div class="ta-highlight" id="taHighlight" aria-hidden="true"></div>
+        <textarea id="inputArea" placeholder="Gõ hoặc dán chữ Hán vào đây… ví dụ: 一二三人手心"></textarea>
+      </div>
     </div>
 
     <div class="divider">
@@ -308,6 +322,7 @@ function mergeCustomEntries(){
 mergeCustomEntries();
 
 const inputArea = document.getElementById('inputArea');
+const taHighlight = document.getElementById('taHighlight');
 const outputRender = document.getElementById('outputRender');
 const leftLabel = document.getElementById('leftLabel');
 const rightLabel = document.getElementById('rightLabel');
@@ -316,6 +331,25 @@ const fileInput = document.getElementById('fileInput');
 const copyBtn = document.getElementById('copyBtn');
 
 function isHanChar(ch){ return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(ch); }
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// always-visible highlight overlay, independent of whether the textarea has focus
+function setInputHighlight(start, end){
+  const text = inputArea.value;
+  const before = escapeHtml(text.slice(0, start));
+  const marked = escapeHtml(text.slice(start, end)) || '&nbsp;';
+  const after = escapeHtml(text.slice(end));
+  taHighlight.innerHTML = before + '<mark>' + marked + '</mark>' + after;
+}
+
+function refreshInputHighlight(){
+  taHighlight.textContent = inputArea.value;
+}
+
+inputArea.addEventListener('scroll', () => { taHighlight.scrollTop = inputArea.scrollTop; });
 
 // --- cross-reference highlighting: hovering an output unit highlights its source text in the input ---
 function codePointOffset(text, cpIndex){
@@ -331,6 +365,7 @@ function highlightHanChar(idx){
   const chars = [...text];
   const end = start + (chars[idx] ? chars[idx].length : 1);
   inputArea.setSelectionRange(start, end);
+  setInputHighlight(start, end);
   scrollTextareaToOffset(start);
 }
 
@@ -348,12 +383,17 @@ function getSyllOffset(text, syllIdx){
 
 function highlightSyll(idx){
   const range = getSyllOffset(inputArea.value, idx);
-  if (range){ inputArea.setSelectionRange(range.start, range.end); scrollTextareaToOffset(range.start); }
+  if (range){
+    inputArea.setSelectionRange(range.start, range.end);
+    setInputHighlight(range.start, range.end);
+    scrollTextareaToOffset(range.start);
+  }
 }
 
 function clearInputHighlight(){
   const pos = inputArea.selectionStart;
   inputArea.setSelectionRange(pos, pos);
+  refreshInputHighlight();
 }
 
 // measure where a character offset would fall inside the (possibly word-wrapped) textarea,
@@ -848,13 +888,14 @@ function extractPlainOutput(){
   }
 }
 
-inputArea.addEventListener('input', () => { resetOverrides(); renderOutput(); saveStore(); });
+inputArea.addEventListener('input', () => { resetOverrides(); refreshInputHighlight(); renderOutput(); saveStore(); });
 
 swapBtn.addEventListener('click', () => {
   const newInput = extractPlainOutput();
   mode = mode === 'han2phien' ? 'phien2han' : 'han2phien';
   resetOverrides();
   inputArea.value = newInput.trim();
+  refreshInputHighlight();
   updateLabels();
   renderOutput();
   saveStore();
@@ -876,7 +917,7 @@ fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => { inputArea.value = ev.target.result; resetOverrides(); renderOutput(); saveStore(); };
+  reader.onload = (ev) => { inputArea.value = ev.target.result; refreshInputHighlight(); resetOverrides(); renderOutput(); saveStore(); };
   reader.readAsText(file, 'UTF-8');
 });
 
@@ -903,6 +944,7 @@ copyBtn.addEventListener('click', async () => {
 });
 
 inputArea.value = (stored && stored.lastText) || '一二三人手心大小山水行';
+refreshInputHighlight();
 updateLabels();
 renderOutput();
 pullFromCloud();
