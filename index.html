@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hán Việt — Tra cứu &amp; Chuyển đổi</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%0A%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22%239C3322%22%20stroke%3D%22%237C2819%22%20stroke-width%3D%222%22/%3E%0A%3Ctext%20x%3D%2232%22%20y%3D%2245%22%20font-family%3D%22%27Noto%20Serif%20TC%27%2C%20%27Songti%20SC%27%2C%20serif%22%20font-size%3D%2234%22%20font-weight%3D%22700%22%20fill%3D%22%23F6F1E4%22%20text-anchor%3D%22middle%22%3E%E8%B6%8A%3C/text%3E%0A%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -29,25 +30,30 @@
     color: var(--ink);
     font-family: 'Noto Serif', Georgia, serif;
     min-height: 100vh;
+    min-height: 100dvh;
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding: 32px 20px 60px;
+    padding: clamp(16px, 2.5vh, 40px) clamp(12px, 3vw, 40px) clamp(20px, 4vh, 60px);
   }
-  header{ max-width: 920px; width:100%; text-align:center; margin-bottom: 28px; }
+  header{ max-width: min(1800px, 96vw); width:100%; text-align:center; margin-bottom: clamp(14px, 2vh, 28px); }
   .eyebrow{
     font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.18em;
     text-transform:uppercase; color: var(--seal); font-weight:600; margin-bottom:8px;
   }
-  h1{ font-family:'Noto Serif TC', serif; font-weight:700; font-size: 34px; margin: 0 0 6px; letter-spacing: .01em; }
+  h1{ font-family:'Noto Serif TC', serif; font-weight:700; font-size: clamp(26px, 2.6vw, 46px); margin: 0 0 6px; letter-spacing: .01em; }
   h1 .cjk{ color: var(--seal); }
   .sub{ font-size:14px; color: var(--ink-soft); font-style:italic; }
 
   .app{
-    max-width: 920px; width:100%; background: var(--panel);
+    max-width: min(1800px, 96vw); width:100%; background: var(--panel);
     border: 1px solid var(--line); border-radius: 4px;
     box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 8px 24px rgba(33,28,22,0.08);
     overflow:visible;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
   }
 
   .toolbar{
@@ -63,15 +69,15 @@
   }
   .upload-btn:hover{ background: var(--jade); color:#fff; }
 
-  .panels{ display:grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; }
-  .panel{ padding: 20px; height: 62vh; display:flex; flex-direction:column; position:relative; }
+  .panels{ display:grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; flex:1; min-height:0; }
+  .panel{ padding: clamp(14px, 1.6vw, 28px); flex:1; display:flex; flex-direction:column; position:relative; min-height:0; }
   .panel-label{
     font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
     color: var(--ink-soft); margin-bottom: 10px; font-weight:600;
   }
   .panel textarea{
     flex:1; resize:none; border:none; background:transparent;
-    font-family: 'Noto Serif TC', 'Noto Serif', serif; font-size: 22px; line-height:1.9;
+    font-family: 'Noto Serif TC', 'Noto Serif', serif; font-size: clamp(18px, 1.3vw, 28px); line-height:1.9;
     color: var(--ink); outline:none; overflow-y:auto;
   }
   .panel textarea::placeholder{ color:#B8AA8F; font-style:italic; font-size:16px;}
@@ -82,13 +88,13 @@
   }
   .ta-highlight{
     position:absolute; inset:0; overflow:hidden; pointer-events:none; margin:0; padding:0;
-    font-family:'Noto Serif TC','Noto Serif',serif; font-size:22px; line-height:1.9;
+    font-family:'Noto Serif TC','Noto Serif',serif; font-size: clamp(18px, 1.3vw, 28px); line-height:1.9;
     white-space:pre-wrap; word-wrap:break-word; word-break:break-word; color:transparent;
   }
   .ta-highlight mark{ background: rgba(156,51,34,0.28); color:transparent; border-radius:2px; }
 
   .output-render{
-    flex:1; font-family: 'Noto Serif TC','Noto Serif', serif; font-size: 21px; line-height: 2.1;
+    flex:1; font-family: 'Noto Serif TC','Noto Serif', serif; font-size: clamp(17px, 1.25vw, 27px); line-height: 2.1;
     word-break: break-word; overflow-y:auto;
   }
   .unit{ position:relative; display:inline; cursor:pointer; border-radius:2px; padding: 1px 1px; }
@@ -96,6 +102,7 @@
   .unit.ambiguous{ color: var(--seal); font-weight:600; }
   .unit.missing{ border-bottom: 2px dashed #B8AA8F; color:#9A8B70; cursor:default; }
   .unit.missing:hover{ background:transparent; }
+  .unit.cross-highlight{ background: rgba(156,51,34,0.28); border-radius:2px; }
 
   .divider{ display:flex; align-items:center; justify-content:center; padding: 0 4px; }
   .swap-btn{
@@ -426,6 +433,85 @@ function scrollTextareaToOffset(offset){
   const target = top - inputArea.clientHeight / 2 + lineHeight / 2;
   inputArea.scrollTop = Math.max(0, target);
 }
+
+// ---------- reverse direction: hovering the input text highlights the matching output unit ----------
+let charBoxes = [];
+let lastHoverIdx = -1;
+
+function buildCharBoxes(){
+  charBoxes = [];
+  const text = inputArea.value;
+  if (!text) return;
+  const style = getComputedStyle(inputArea);
+  const mirror = document.createElement('div');
+  MIRROR_PROPS.forEach(p => mirror.style[p] = style[p]);
+  mirror.style.position = 'absolute';
+  mirror.style.visibility = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordWrap = 'break-word';
+  mirror.style.wordBreak = 'break-word';
+  mirror.style.height = 'auto';
+  mirror.style.top = '0';
+  mirror.style.left = '-9999px';
+  document.body.appendChild(mirror);
+
+  const chars = [...text];
+  chars.forEach(ch => {
+    const span = document.createElement('span');
+    span.textContent = ch;
+    mirror.appendChild(span);
+  });
+  const mirrorRect = mirror.getBoundingClientRect();
+  Array.from(mirror.children).forEach(span => {
+    const r = span.getBoundingClientRect();
+    charBoxes.push({
+      left: r.left - mirrorRect.left, top: r.top - mirrorRect.top,
+      right: r.right - mirrorRect.left, bottom: r.bottom - mirrorRect.top
+    });
+  });
+  document.body.removeChild(mirror);
+  lastHoverIdx = -1;
+}
+
+function findCharIndexAtPoint(x, y){
+  for (let i = 0; i < charBoxes.length; i++){
+    const b = charBoxes[i];
+    if (x >= b.left && x < b.right && y >= b.top && y < b.bottom) return i;
+  }
+  return -1;
+}
+
+function highlightOutputUnit(idx){
+  clearOutputHighlight();
+  const el = outputRender.querySelector('.unit[data-idx="' + idx + '"]');
+  if (!el) return;
+  el.classList.add('cross-highlight');
+  el.scrollIntoView({ block: 'center', inline: 'nearest' });
+}
+
+function clearOutputHighlight(){
+  const prev = outputRender.querySelector('.cross-highlight');
+  if (prev) prev.classList.remove('cross-highlight');
+}
+
+inputArea.addEventListener('mousemove', (e) => {
+  const rect = inputArea.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top + inputArea.scrollTop;
+  const idx = findCharIndexAtPoint(x, y);
+  if (idx === lastHoverIdx) return;
+  lastHoverIdx = idx;
+  if (idx >= 0) highlightOutputUnit(idx);
+  else clearOutputHighlight();
+});
+
+inputArea.addEventListener('mouseleave', () => { lastHoverIdx = -1; clearOutputHighlight(); });
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(buildCharBoxes, 200);
+});
 
 function closeFloating(){ document.querySelectorAll('.float-panel').forEach(el => el.remove()); }
 
@@ -888,7 +974,7 @@ function extractPlainOutput(){
   }
 }
 
-inputArea.addEventListener('input', () => { resetOverrides(); refreshInputHighlight(); renderOutput(); saveStore(); });
+inputArea.addEventListener('input', () => { resetOverrides(); refreshInputHighlight(); buildCharBoxes(); renderOutput(); saveStore(); });
 
 swapBtn.addEventListener('click', () => {
   const newInput = extractPlainOutput();
@@ -896,6 +982,7 @@ swapBtn.addEventListener('click', () => {
   resetOverrides();
   inputArea.value = newInput.trim();
   refreshInputHighlight();
+  buildCharBoxes();
   updateLabels();
   renderOutput();
   saveStore();
@@ -917,7 +1004,7 @@ fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (ev) => { inputArea.value = ev.target.result; refreshInputHighlight(); resetOverrides(); renderOutput(); saveStore(); };
+  reader.onload = (ev) => { inputArea.value = ev.target.result; refreshInputHighlight(); buildCharBoxes(); resetOverrides(); renderOutput(); saveStore(); };
   reader.readAsText(file, 'UTF-8');
 });
 
@@ -945,6 +1032,7 @@ copyBtn.addEventListener('click', async () => {
 
 inputArea.value = (stored && stored.lastText) || '一二三人手心大小山水行';
 refreshInputHighlight();
+buildCharBoxes();
 updateLabels();
 renderOutput();
 pullFromCloud();
