@@ -69,6 +69,15 @@
   }
   .upload-btn:hover{ background: var(--jade); color:#fff; }
 
+  .font-btns{ display:inline-flex; gap:4px; }
+  .font-btn{
+    font-family:'Inter',sans-serif; font-size:10px; font-weight:600; color: var(--ink-soft);
+    background: transparent; border: 1px solid var(--line); border-radius: 3px;
+    width:22px; height:22px; line-height:1; cursor:pointer; transition: all .15s ease;
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+  }
+  .font-btn:hover{ background: var(--ink-soft); color:#fff; border-color: var(--ink-soft); }
+
   .panels{ display:grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; flex:1; min-height:0; }
   .panel{ padding: clamp(14px, 1.6vw, 28px); flex:1; display:flex; flex-direction:column; position:relative; min-height:0; }
   .panel-label{
@@ -200,7 +209,13 @@
 
   <div class="panels">
     <div class="panel">
-      <div class="panel-label" id="leftLabel">Hán cổ</div>
+      <div class="panel-label" style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="leftLabel">Hán cổ</span>
+        <span class="font-btns">
+          <button class="font-btn" id="leftFontMinus" type="button" title="Chữ nhỏ hơn">A-</button>
+          <button class="font-btn" id="leftFontPlus" type="button" title="Chữ lớn hơn">A+</button>
+        </span>
+      </div>
       <div class="ta-wrap">
         <div class="ta-highlight" id="taHighlight" aria-hidden="true"></div>
         <textarea id="inputArea" placeholder="Gõ hoặc dán chữ Hán vào đây… ví dụ: 一二三人手心"></textarea>
@@ -214,7 +229,13 @@
     <div class="panel">
       <div class="panel-label" style="display:flex; justify-content:space-between; align-items:center;">
         <span id="rightLabel">Phiên âm Hán Việt</span>
-        <button class="upload-btn" id="copyBtn" type="button" style="font-size:11px; padding:3px 9px;">Sao chép</button>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="font-btns">
+            <button class="font-btn" id="rightFontMinus" type="button" title="Chữ nhỏ hơn">A-</button>
+            <button class="font-btn" id="rightFontPlus" type="button" title="Chữ lớn hơn">A+</button>
+          </span>
+          <button class="upload-btn" id="copyBtn" type="button" style="font-size:11px; padding:3px 9px;">Sao chép</button>
+        </span>
       </div>
       <div class="output-render" id="outputRender"></div>
     </div>
@@ -242,6 +263,7 @@ DICTIONARY.forEach(rec => {
 
 // ---------- persistence (localStorage) ----------
 const LS_KEY = 'hanviet_tool_v1';
+const FONT_LS_KEY = 'hanviet_font_prefs_v1';
 function loadStore(){
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -336,8 +358,55 @@ const rightLabel = document.getElementById('rightLabel');
 const swapBtn = document.getElementById('swapBtn');
 const fileInput = document.getElementById('fileInput');
 const copyBtn = document.getElementById('copyBtn');
+const leftFontMinus = document.getElementById('leftFontMinus');
+const leftFontPlus = document.getElementById('leftFontPlus');
+const rightFontMinus = document.getElementById('rightFontMinus');
+const rightFontPlus = document.getElementById('rightFontPlus');
 
 function isHanChar(ch){ return /[\u4E00-\u9FFF\u3400-\u4DBF]/.test(ch); }
+
+// ---------- per-panel font size (A+ / A-), persisted locally per device ----------
+const FONT_MIN = 14, FONT_MAX = 44, FONT_STEP = 2;
+
+function loadFontPrefs(){
+  try {
+    const raw = localStorage.getItem(FONT_LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e){ return {}; }
+}
+function saveFontPrefs(){
+  try { localStorage.setItem(FONT_LS_KEY, JSON.stringify({ han: hanFontSize, phien: phienFontSize })); } catch(e){}
+}
+
+const fontPrefs = loadFontPrefs();
+let hanFontSize = fontPrefs.han || null;
+let phienFontSize = fontPrefs.phien || null;
+
+function applyFontSizes(){
+  if (hanFontSize){
+    inputArea.style.fontSize = hanFontSize + 'px';
+    taHighlight.style.fontSize = hanFontSize + 'px';
+  }
+  if (phienFontSize){
+    outputRender.style.fontSize = phienFontSize + 'px';
+  }
+}
+
+function adjustHanFont(delta){
+  const current = hanFontSize || parseFloat(getComputedStyle(inputArea).fontSize);
+  hanFontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, current + delta));
+  applyFontSizes();
+  refreshInputHighlight();
+  buildCharBoxes();
+  saveFontPrefs();
+}
+
+function adjustPhienFont(delta){
+  const current = phienFontSize || parseFloat(getComputedStyle(outputRender).fontSize);
+  phienFontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, current + delta));
+  applyFontSizes();
+  saveFontPrefs();
+}
 
 function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1030,7 +1099,13 @@ copyBtn.addEventListener('click', async () => {
   }
 });
 
+leftFontMinus.addEventListener('click', () => adjustHanFont(-FONT_STEP));
+leftFontPlus.addEventListener('click', () => adjustHanFont(FONT_STEP));
+rightFontMinus.addEventListener('click', () => adjustPhienFont(-FONT_STEP));
+rightFontPlus.addEventListener('click', () => adjustPhienFont(FONT_STEP));
+
 inputArea.value = (stored && stored.lastText) || '一二三人手心大小山水行';
+applyFontSizes();
 refreshInputHighlight();
 buildCharBoxes();
 updateLabels();
