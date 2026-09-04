@@ -296,18 +296,32 @@ function syncToCloud(){
   }).catch(() => { /* offline or unreachable — local copy is still safe */ });
 }
 
+function mergeCustomEntriesData(cloudCE, localCE){
+  const cloudN = normalizeCustomEntries(cloudCE);
+  const localN = normalizeCustomEntries(localCE);
+  const result = { readings: {}, chars: {} };
+  new Set([...Object.keys(cloudN.readings), ...Object.keys(localN.readings)]).forEach(ch => {
+    result.readings[ch] = Array.from(new Set([...(cloudN.readings[ch]||[]), ...(localN.readings[ch]||[])]));
+  });
+  new Set([...Object.keys(cloudN.chars), ...Object.keys(localN.chars)]).forEach(key => {
+    result.chars[key] = Array.from(new Set([...(cloudN.chars[key]||[]), ...(localN.chars[key]||[])]));
+  });
+  return result;
+}
+
 async function pullFromCloud(){
   try {
     const res = await fetch(FIREBASE_URL + FIREBASE_PATH);
     if (!res.ok) return;
     const cloud = await res.json();
     if (!cloud) return;
-    if (cloud.charOverrides) charOverrides = cloud.charOverrides;
-    if (cloud.ctxOverrides) ctxOverrides = cloud.ctxOverrides;
-    if (cloud.customEntries) customEntries = cloud.customEntries;
+    // merge additively — local edits made while this request was in flight must never be lost
+    charOverrides = Object.assign({}, cloud.charOverrides || {}, charOverrides);
+    ctxOverrides = Object.assign({}, cloud.ctxOverrides || {}, ctxOverrides);
+    customEntries = mergeCustomEntriesData(cloud.customEntries, customEntries);
     mergeCustomEntries();
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ charOverrides, ctxOverrides, customEntries, lastText: inputArea.value, lastMode: mode })); } catch(e){}
     renderOutput();
+    saveStore(); // push the merged, up-to-date result back so the cloud catches up too
   } catch(e){ /* offline or unreachable — app still works from local data */ }
 }
 
@@ -332,8 +346,8 @@ function normalizeCustomEntries(ce){
 function mergeCustomEntries(){
   customEntries = normalizeCustomEntries(customEntries);
   Object.entries(customEntries.readings).forEach(([ch, extraReadings]) => {
+    if (!charMap[ch]) charMap[ch] = { char: ch, readings: [], nghia: '(tự thêm)', goiy: '' };
     const rec = charMap[ch];
-    if (!rec) return;
     (extraReadings || []).forEach(r => {
       if (!rec.readings.includes(r)) rec.readings.push(r);
       const key = r.toLowerCase();
